@@ -164,7 +164,7 @@ Este proyecto es de uso personal.
 ## 🤝 Contribuciones
 
 Siéntete libre de mejorar la aplicación según tus necesidades.
-##Download Android :
+## Download Android :
 
 https://expo.dev/artifacts/eas/8qmWBktAnjpoQrobN6LX6F.apk
 ---
