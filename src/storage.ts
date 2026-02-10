@@ -45,7 +45,7 @@ const KEYS = {
 
 // Helper function to generate unique IDs
 const generateUniqueId = (): string => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 };
 
 // Helper function to validate amount

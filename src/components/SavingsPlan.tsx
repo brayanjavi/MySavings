@@ -311,11 +311,14 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
                             {
                               text: 'Agregar',
                               onPress: (amount?: string) => {
-                                if (amount) {
-                                  handleUpdateAmount(
-                                    item,
-                                    item.currentAmount + parseFloat(amount)
-                                  );
+                                if (amount && amount.trim()) {
+                                  const parsedAmount = parseFloat(amount);
+                                  if (!isNaN(parsedAmount)) {
+                                    handleUpdateAmount(
+                                      item,
+                                      item.currentAmount + parsedAmount
+                                    );
+                                  }
                                 }
                               },
                             },
@@ -337,8 +340,11 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
                             {
                               text: 'Establecer',
                               onPress: (amount?: string) => {
-                                if (amount) {
-                                  handleUpdateAmount(item, parseFloat(amount));
+                                if (amount && amount.trim()) {
+                                  const parsedAmount = parseFloat(amount);
+                                  if (!isNaN(parsedAmount)) {
+                                    handleUpdateAmount(item, parsedAmount);
+                                  }
                                 }
                               },
                             },
