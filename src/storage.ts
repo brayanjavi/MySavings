@@ -43,13 +43,42 @@ const KEYS = {
   SAVINGS_PLANS: '@mysavings:savings_plans',
 };
 
+// Helper function to generate unique IDs
+const generateUniqueId = (): string => {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+
+// Helper function to validate amount
+const validateAmount = (amount: number): void => {
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    throw new Error('El monto debe ser un número válido');
+  }
+  if (amount <= 0) {
+    throw new Error('El monto debe ser mayor a cero');
+  }
+  if (amount > 999999999) {
+    throw new Error('El monto es demasiado grande');
+  }
+};
+
+// Helper function to validate date
+const validateDate = (date: string): void => {
+  const dateObj = new Date(date + 'T00:00:00');
+  if (isNaN(dateObj.getTime())) {
+    throw new Error('Fecha inválida');
+  }
+};
+
 // INCOMES
 export const addIncome = async (income: Omit<Income, 'id'>) => {
   try {
+    validateAmount(income.amount);
+    validateDate(income.date);
+    
     const incomes = await getIncomes();
     const newIncome: Income = {
       ...income,
-      id: Date.now().toString(),
+      id: generateUniqueId(),
     };
     await AsyncStorage.setItem(KEYS.INCOMES, JSON.stringify([...incomes, newIncome]));
     return newIncome;
@@ -94,10 +123,13 @@ export const deleteIncome = async (id: string) => {
 // EXPENSES
 export const addExpense = async (expense: Omit<Expense, 'id'>) => {
   try {
+    validateAmount(expense.amount);
+    validateDate(expense.date);
+    
     const expenses = await getExpenses();
     const newExpense: Expense = {
       ...expense,
-      id: Date.now().toString(),
+      id: generateUniqueId(),
     };
     await AsyncStorage.setItem(KEYS.EXPENSES, JSON.stringify([...expenses, newExpense]));
     return newExpense;
@@ -142,10 +174,13 @@ export const deleteExpense = async (id: string) => {
 // REMINDERS
 export const addReminder = async (reminder: Omit<Reminder, 'id'>) => {
   try {
+    validateAmount(reminder.amount);
+    validateDate(reminder.dueDate);
+    
     const reminders = await getReminders();
     const newReminder: Reminder = {
       ...reminder,
-      id: Date.now().toString(),
+      id: generateUniqueId(),
     };
     await AsyncStorage.setItem(KEYS.REMINDERS, JSON.stringify([...reminders, newReminder]));
     return newReminder;
@@ -190,10 +225,16 @@ export const deleteReminder = async (id: string) => {
 // SAVINGS PLANS
 export const addSavingsPlan = async (plan: Omit<SavingsPlan, 'id'>) => {
   try {
+    validateAmount(plan.targetAmount);
+    if (plan.currentAmount < 0 || plan.currentAmount > plan.targetAmount) {
+      throw new Error('El monto actual debe estar entre 0 y el monto objetivo');
+    }
+    validateDate(plan.deadline);
+    
     const plans = await getSavingsPlans();
     const newPlan: SavingsPlan = {
       ...plan,
-      id: Date.now().toString(),
+      id: generateUniqueId(),
     };
     await AsyncStorage.setItem(KEYS.SAVINGS_PLANS, JSON.stringify([...plans, newPlan]));
     return newPlan;

@@ -12,33 +12,14 @@ import Button from './ui/Button';
 import Input from './ui/Input';
 import Card from './ui/Card';
 import { addExpense, getExpenses, deleteExpense, Expense } from '../storage';
+import { APP_CONFIG } from '../config';
+import { getCategoryEmoji, formatDate } from '../utils';
 
 interface ExpenseFormProps {
   onSuccess?: () => void;
 }
 
-const EXPENSE_CATEGORIES = [
-  'Alimentación',
-  'Transporte',
-  'Entretenimiento',
-  'Salud',
-  'Educación',
-  'Utilidades',
-  'Otro',
-];
-
-const getCategoryEmoji = (category: string): string => {
-  const emojiMap: { [key: string]: string } = {
-    Alimentación: '🍔',
-    Transporte: '🚗',
-    Entretenimiento: '🎬',
-    Salud: '⚕️',
-    Educación: '📚',
-    Utilidades: '💡',
-    Otro: '💳',
-  };
-  return emojiMap[category] || '💳';
-};
+const EXPENSE_CATEGORIES = APP_CONFIG.expenseCategories;
 
 const ExpenseForm = ({ onSuccess }: ExpenseFormProps) => {
   const [amount, setAmount] = useState('');
@@ -63,21 +44,40 @@ const ExpenseForm = ({ onSuccess }: ExpenseFormProps) => {
   };
 
   const handleAddExpense = async () => {
+    // Validación de campos
     if (!amount.trim() || !description.trim()) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      Alert.alert('Error', APP_CONFIG.messages.error.fillAllFields);
+      return;
+    }
+
+    const amountNum = parseFloat(amount);
+    
+    // Validación de monto
+    if (isNaN(amountNum)) {
+      Alert.alert('Error', 'El monto debe ser un número válido');
+      return;
+    }
+    
+    if (amountNum <= 0) {
+      Alert.alert('Error', 'El monto debe ser mayor a cero');
+      return;
+    }
+    
+    if (amountNum > APP_CONFIG.limits.maxAmount) {
+      Alert.alert('Error', 'El monto es demasiado grande');
       return;
     }
 
     setLoading(true);
     try {
       await addExpense({
-        amount: parseFloat(amount),
+        amount: amountNum,
         date: selectedDate,
         category,
         description,
       });
 
-      Alert.alert('Éxito', 'Gasto registrado correctamente');
+      Alert.alert('Éxito', APP_CONFIG.messages.success.expenseAdded);
       setAmount('');
       setDescription('');
       setCategory('Alimentación');
@@ -85,7 +85,8 @@ const ExpenseForm = ({ onSuccess }: ExpenseFormProps) => {
       await loadExpenses();
       onSuccess?.();
     } catch (error) {
-      Alert.alert('Error', 'No se pudo registrar el gasto');
+      const errorMessage = error instanceof Error ? error.message : APP_CONFIG.messages.error.expenseAddFailed;
+      Alert.alert('Error', errorMessage);
       console.error(error);
     } finally {
       setLoading(false);
@@ -102,22 +103,17 @@ const ExpenseForm = ({ onSuccess }: ExpenseFormProps) => {
           try {
             await deleteExpense(id);
             await loadExpenses();
-            Alert.alert('Éxito', 'Gasto eliminado');
+            Alert.alert('Éxito', APP_CONFIG.messages.success.itemDeleted);
           } catch (error) {
-            Alert.alert('Error', 'No se pudo eliminar el gasto');
+            Alert.alert('Error', APP_CONFIG.messages.error.deleteFailed);
           }
         },
       },
     ]);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+  const formatDateLocal = (dateString: string) => {
+    return formatDate(dateString);
   };
 
   const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -171,7 +167,7 @@ const ExpenseForm = ({ onSuccess }: ExpenseFormProps) => {
           style={styles.dateButton}
           onPress={() => setShowDatePicker(!showDatePicker)}
         >
-          <Text style={styles.dateButtonText}>📅 {formatDate(selectedDate)}</Text>
+          <Text style={styles.dateButtonText}>📅 {formatDateLocal(selectedDate)}</Text>
         </TouchableOpacity>
 
         {showDatePicker && (
@@ -229,7 +225,7 @@ const ExpenseForm = ({ onSuccess }: ExpenseFormProps) => {
                   <Text style={styles.expenseDescription}>{item.description}</Text>
                   <View style={styles.expenseMeta}>
                     <Text style={styles.expenseCategory}>{item.category}</Text>
-                    <Text style={styles.expenseDate}>• {formatDate(item.date)}</Text>
+                    <Text style={styles.expenseDate}>• {formatDateLocal(item.date)}</Text>
                   </View>
                 </View>
                 <View style={styles.expenseRight}>
