@@ -18,21 +18,14 @@ import {
   updateSavingsPlan,
   SavingsPlan,
 } from '../storage';
+import { APP_CONFIG } from '../config';
+import { getPriorityColor, formatDate, getDaysRemaining } from '../utils';
 
 interface SavingsPlanProps {
   onSuccess?: () => void;
 }
 
-const PRIORITY_LEVELS = ['low', 'medium', 'high'] as const;
-
-const getPriorityColor = (priority: 'low' | 'medium' | 'high'): string => {
-  const colors = {
-    low: '#3B82F6',
-    medium: '#F59E0B',
-    high: '#EF4444',
-  };
-  return colors[priority];
-};
+const PRIORITY_LEVELS = APP_CONFIG.priorityLevels;
 
 const getPriorityLabel = (priority: 'low' | 'medium' | 'high'): string => {
   const labels = {
@@ -66,8 +59,27 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
   };
 
   const handleAddPlan = async () => {
+    // Validación de campos
     if (!name.trim() || !targetAmount.trim() || !deadline.trim()) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      Alert.alert('Error', APP_CONFIG.messages.error.fillAllFields);
+      return;
+    }
+
+    const targetNum = parseFloat(targetAmount);
+    
+    // Validación de monto
+    if (isNaN(targetNum)) {
+      Alert.alert('Error', 'El monto objetivo debe ser un número válido');
+      return;
+    }
+    
+    if (targetNum <= 0) {
+      Alert.alert('Error', 'El monto objetivo debe ser mayor a cero');
+      return;
+    }
+    
+    if (targetNum > APP_CONFIG.limits.maxAmount) {
+      Alert.alert('Error', 'El monto objetivo es demasiado grande');
       return;
     }
 
@@ -75,14 +87,14 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
     try {
       await addSavingsPlan({
         name,
-        targetAmount: parseFloat(targetAmount),
+        targetAmount: targetNum,
         currentAmount: 0,
         deadline,
         priority,
         description,
       });
 
-      Alert.alert('Éxito', 'Plan de ahorro creado');
+      Alert.alert('Éxito', APP_CONFIG.messages.success.planCreated);
       setName('');
       setTargetAmount('');
       setDeadline(new Date().toISOString().split('T')[0]);
@@ -91,7 +103,8 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
       await loadPlans();
       onSuccess?.();
     } catch (error) {
-      Alert.alert('Error', 'No se pudo crear el plan');
+      const errorMessage = error instanceof Error ? error.message : APP_CONFIG.messages.error.planFailed;
+      Alert.alert('Error', errorMessage);
       console.error(error);
     } finally {
       setLoading(false);
@@ -108,9 +121,9 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
           try {
             await deleteSavingsPlan(id);
             await loadPlans();
-            Alert.alert('Éxito', 'Plan eliminado');
+            Alert.alert('Éxito', APP_CONFIG.messages.success.itemDeleted);
           } catch (error) {
-            Alert.alert('Error', 'No se pudo eliminar el plan');
+            Alert.alert('Error', APP_CONFIG.messages.error.deleteFailed);
           }
         },
       },
@@ -118,6 +131,11 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
   };
 
   const handleUpdateAmount = async (plan: SavingsPlan, newAmount: number) => {
+    if (isNaN(newAmount) || newAmount < 0) {
+      Alert.alert('Error', 'Monto inválido');
+      return;
+    }
+    
     if (newAmount > plan.targetAmount) {
       Alert.alert('Advertencia', 'La cantidad no puede exceder el objetivo');
       return;
@@ -131,21 +149,8 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const getDaysRemaining = (deadline: string): number => {
-    const today = new Date();
-    const deadlineDate = new Date(deadline + 'T00:00:00');
-    const diffTime = deadlineDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+  const formatDateLocal = (dateString: string) => {
+    return formatDate(dateString);
   };
 
   const activePlans = plans.filter((p) => p.currentAmount < p.targetAmount);
@@ -210,7 +215,7 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
         </View>
 
         <TouchableOpacity style={styles.dateButton} onPress={() => {}}>
-          <Text style={styles.dateButtonText}>📅 {formatDate(deadline)}</Text>
+          <Text style={styles.dateButtonText}>📅 {formatDateLocal(deadline)}</Text>
         </TouchableOpacity>
 
         <Button
@@ -305,12 +310,15 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
                             { text: 'Cancelar', style: 'cancel' },
                             {
                               text: 'Agregar',
-                              onPress: (amount) => {
-                                if (amount) {
-                                  handleUpdateAmount(
-                                    item,
-                                    item.currentAmount + parseFloat(amount)
-                                  );
+                              onPress: (amount?: string) => {
+                                if (amount && amount.trim()) {
+                                  const parsedAmount = parseFloat(amount);
+                                  if (!isNaN(parsedAmount)) {
+                                    handleUpdateAmount(
+                                      item,
+                                      item.currentAmount + parsedAmount
+                                    );
+                                  }
                                 }
                               },
                             },
@@ -331,9 +339,12 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
                             { text: 'Cancelar', style: 'cancel' },
                             {
                               text: 'Establecer',
-                              onPress: (amount) => {
-                                if (amount) {
-                                  handleUpdateAmount(item, parseFloat(amount));
+                              onPress: (amount?: string) => {
+                                if (amount && amount.trim()) {
+                                  const parsedAmount = parseFloat(amount);
+                                  if (!isNaN(parsedAmount)) {
+                                    handleUpdateAmount(item, parsedAmount);
+                                  }
                                 }
                               },
                             },

@@ -13,23 +13,15 @@ import Button from './ui/Button';
 import Input from './ui/Input';
 import Card from './ui/Card';
 import { addReminder, getReminders, deleteReminder, updateReminder, Reminder } from '../storage';
+import { APP_CONFIG } from '../config';
+import { getCategoryEmoji, getFrequencyLabel, formatDate } from '../utils';
 
 interface RemindersProps {
   onSuccess?: () => void;
 }
 
-const CATEGORIES = ['Renovaciones', 'Membresías', 'Pagos Cotidianos', 'Otros'];
-const FREQUENCIES = ['once', 'monthly', 'yearly'] as const;
-
-const getCategoryEmoji = (category: string): string => {
-  const emojiMap: { [key: string]: string } = {
-    Renovaciones: '🔄',
-    Membresías: '🎫',
-    'Pagos Cotidianos': '💰',
-    Otros: '📌',
-  };
-  return emojiMap[category] || '📌';
-};
+const CATEGORIES = APP_CONFIG.reminderCategories;
+const FREQUENCIES = APP_CONFIG.frequencies.reminder;
 
 const Reminders = ({ onSuccess }: RemindersProps) => {
   const [title, setTitle] = useState('');
@@ -54,8 +46,27 @@ const Reminders = ({ onSuccess }: RemindersProps) => {
   };
 
   const handleAddReminder = async () => {
+    // Validación de campos
     if (!title.trim() || !amount.trim()) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      Alert.alert('Error', APP_CONFIG.messages.error.fillAllFields);
+      return;
+    }
+
+    const amountNum = parseFloat(amount);
+    
+    // Validación de monto
+    if (isNaN(amountNum)) {
+      Alert.alert('Error', 'El monto debe ser un número válido');
+      return;
+    }
+    
+    if (amountNum <= 0) {
+      Alert.alert('Error', 'El monto debe ser mayor a cero');
+      return;
+    }
+    
+    if (amountNum > APP_CONFIG.limits.maxAmount) {
+      Alert.alert('Error', 'El monto es demasiado grande');
       return;
     }
 
@@ -63,14 +74,14 @@ const Reminders = ({ onSuccess }: RemindersProps) => {
     try {
       await addReminder({
         title,
-        amount: parseFloat(amount),
+        amount: amountNum,
         dueDate,
         category: selectedCategory,
         frequency: selectedFrequency,
         isActive: true,
       });
 
-      Alert.alert('Éxito', 'Recordatorio creado');
+      Alert.alert('Éxito', APP_CONFIG.messages.success.reminderCreated);
       setTitle('');
       setAmount('');
       setSelectedCategory('Renovaciones');
@@ -79,7 +90,8 @@ const Reminders = ({ onSuccess }: RemindersProps) => {
       await loadReminders();
       onSuccess?.();
     } catch (error) {
-      Alert.alert('Error', 'No se pudo crear el recordatorio');
+      const errorMessage = error instanceof Error ? error.message : APP_CONFIG.messages.error.reminderFailed;
+      Alert.alert('Error', errorMessage);
       console.error(error);
     } finally {
       setLoading(false);
@@ -96,9 +108,9 @@ const Reminders = ({ onSuccess }: RemindersProps) => {
           try {
             await deleteReminder(id);
             await loadReminders();
-            Alert.alert('Éxito', 'Recordatorio eliminado');
+            Alert.alert('Éxito', APP_CONFIG.messages.success.itemDeleted);
           } catch (error) {
-            Alert.alert('Error', 'No se pudo eliminar');
+            Alert.alert('Error', APP_CONFIG.messages.error.deleteFailed);
           }
         },
       },
@@ -117,22 +129,8 @@ const Reminders = ({ onSuccess }: RemindersProps) => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const getFrequencyLabel = (freq: 'once' | 'monthly' | 'yearly'): string => {
-    const labels = {
-      once: 'Una sola vez',
-      monthly: 'Mensual',
-      yearly: 'Anual',
-    };
-    return labels[freq];
+  const formatDateLocal = (dateString: string) => {
+    return formatDate(dateString);
   };
 
   const upcomingReminders = reminders.filter(
@@ -213,7 +211,7 @@ const Reminders = ({ onSuccess }: RemindersProps) => {
         </View>
 
         <TouchableOpacity style={styles.dateButton} onPress={() => {}}>
-          <Text style={styles.dateButtonText}>📅 {formatDate(dueDate)}</Text>
+          <Text style={styles.dateButtonText}>📅 {formatDateLocal(dueDate)}</Text>
         </TouchableOpacity>
 
         <Button
@@ -241,7 +239,7 @@ const Reminders = ({ onSuccess }: RemindersProps) => {
                     <Text style={styles.reminderTitle}>{item.title}</Text>
                     <View style={styles.reminderMeta}>
                       <Text style={styles.reminderCategory}>{item.category}</Text>
-                      <Text style={styles.reminderDate}>• {formatDate(item.dueDate)}</Text>
+                      <Text style={styles.reminderDate}>• {formatDateLocal(item.dueDate)}</Text>
                     </View>
                     <Text style={styles.reminderFrequency}>{getFrequencyLabel(item.frequency)}</Text>
                   </View>
@@ -275,7 +273,7 @@ const Reminders = ({ onSuccess }: RemindersProps) => {
                     <Text style={[styles.reminderTitle, styles.reminderTitlePast]}>{item.title}</Text>
                     <View style={styles.reminderMeta}>
                       <Text style={styles.reminderCategory}>{item.category}</Text>
-                      <Text style={styles.reminderDate}>• {formatDate(item.dueDate)}</Text>
+                      <Text style={styles.reminderDate}>• {formatDateLocal(item.dueDate)}</Text>
                     </View>
                   </View>
                 </View>

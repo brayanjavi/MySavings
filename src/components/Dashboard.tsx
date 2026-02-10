@@ -6,9 +6,12 @@ import {
   Text,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import Card from './ui/Card';
 import { getTotalIncome, getTotalExpenses, getBalance } from '../storage';
+import { APP_CONFIG } from '../config';
+import { getCurrentMonth, calculatePercentage } from '../utils';
 
 interface DashboardProps {
   onRefresh?: () => void;
@@ -21,7 +24,7 @@ const Dashboard = ({ onRefresh }: DashboardProps) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const currentMonth = new Date().toISOString().substring(0, 7);
+  const currentMonth = getCurrentMonth();
 
   useEffect(() => {
     loadData();
@@ -51,7 +54,16 @@ const Dashboard = ({ onRefresh }: DashboardProps) => {
     setRefreshing(false);
   };
 
-  const expensePercentage = income > 0 ? (expenses / income) * 100 : 0;
+  const expensePercentage = calculatePercentage(expenses, income);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={APP_CONFIG.colors.primary} />
+        <Text style={styles.loadingText}>Cargando datos...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -146,18 +158,12 @@ const Dashboard = ({ onRefresh }: DashboardProps) => {
 
         <Card title="Consejos Financieros">
           <View style={styles.tipsContainer}>
-            <View style={styles.tip}>
-              <Text style={styles.tipNumber}>1</Text>
-              <Text style={styles.tipText}>Registra tus gastos diarios para mantener el control</Text>
-            </View>
-            <View style={styles.tip}>
-              <Text style={styles.tipNumber}>2</Text>
-              <Text style={styles.tipText}>Establece metas realistas y sigue tus planes de ahorro</Text>
-            </View>
-            <View style={styles.tip}>
-              <Text style={styles.tipNumber}>3</Text>
-              <Text style={styles.tipText}>Mantén activos los recordatorios de tus pagos</Text>
-            </View>
+            {APP_CONFIG.tips.slice(0, 3).map((tip, index) => (
+              <View key={index} style={styles.tip}>
+                <Text style={styles.tipNumber}>{index + 1}</Text>
+                <Text style={styles.tipText}>{tip}</Text>
+              </View>
+            ))}
           </View>
         </Card>
       </View>
@@ -168,13 +174,24 @@ const Dashboard = ({ onRefresh }: DashboardProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: APP_CONFIG.colors.lighter,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: APP_CONFIG.colors.lighter,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: APP_CONFIG.colors.text,
   },
   header: {
     paddingTop: 20,
     paddingBottom: 20,
     paddingHorizontal: 16,
-    backgroundColor: '#6366F1',
+    backgroundColor: APP_CONFIG.colors.primary,
   },
   headerContent: {
     marginTop: 10,
@@ -205,7 +222,7 @@ const styles = StyleSheet.create({
   },
   balanceLabel: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: APP_CONFIG.colors.text,
     fontWeight: '500',
   },
   balanceAmount: {
@@ -214,16 +231,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   positive: {
-    color: '#10B981',
+    color: APP_CONFIG.colors.success,
   },
   negative: {
-    color: '#EF4444',
+    color: APP_CONFIG.colors.danger,
   },
   balanceEmoji: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: APP_CONFIG.colors.light,
     alignItems: 'center',
     justifyContent: 'center',
   },

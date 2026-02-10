@@ -13,6 +13,8 @@ import Button from './ui/Button';
 import Input from './ui/Input';
 import Card from './ui/Card';
 import { addIncome, getIncomes, deleteIncome, Income } from '../storage';
+import { APP_CONFIG } from '../config';
+import { formatDate, getFrequencyLabel } from '../utils';
 
 interface IncomeFormProps {
   onSuccess?: () => void;
@@ -41,21 +43,40 @@ const IncomeForm = ({ onSuccess }: IncomeFormProps) => {
   };
 
   const handleAddIncome = async () => {
+    // Validación de campos
     if (!amount.trim() || !description.trim()) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      Alert.alert('Error', APP_CONFIG.messages.error.fillAllFields);
+      return;
+    }
+
+    const amountNum = parseFloat(amount);
+    
+    // Validación de monto
+    if (isNaN(amountNum)) {
+      Alert.alert('Error', 'El monto debe ser un número válido');
+      return;
+    }
+    
+    if (amountNum <= 0) {
+      Alert.alert('Error', 'El monto debe ser mayor a cero');
+      return;
+    }
+    
+    if (amountNum > APP_CONFIG.limits.maxAmount) {
+      Alert.alert('Error', 'El monto es demasiado grande');
       return;
     }
 
     setLoading(true);
     try {
       await addIncome({
-        amount: parseFloat(amount),
+        amount: amountNum,
         date: selectedDate,
         frequency,
         description,
       });
 
-      Alert.alert('Éxito', 'Ingreso registrado correctamente');
+      Alert.alert('Éxito', APP_CONFIG.messages.success.incomeAdded);
       setAmount('');
       setDescription('');
       setFrequency('monthly');
@@ -63,7 +84,8 @@ const IncomeForm = ({ onSuccess }: IncomeFormProps) => {
       await loadIncomes();
       onSuccess?.();
     } catch (error) {
-      Alert.alert('Error', 'No se pudo registrar el ingreso');
+      const errorMessage = error instanceof Error ? error.message : APP_CONFIG.messages.error.incomeAddFailed;
+      Alert.alert('Error', errorMessage);
       console.error(error);
     } finally {
       setLoading(false);
@@ -80,22 +102,17 @@ const IncomeForm = ({ onSuccess }: IncomeFormProps) => {
           try {
             await deleteIncome(id);
             await loadIncomes();
-            Alert.alert('Éxito', 'Ingreso eliminado');
+            Alert.alert('Éxito', APP_CONFIG.messages.success.itemDeleted);
           } catch (error) {
-            Alert.alert('Error', 'No se pudo eliminar el ingreso');
+            Alert.alert('Error', APP_CONFIG.messages.error.deleteFailed);
           }
         },
       },
     ]);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const formatDateLocal = (dateString: string) => {
+    return formatDate(dateString, 'long');
   };
 
   const generateDateOptions = () => {
@@ -144,7 +161,7 @@ const IncomeForm = ({ onSuccess }: IncomeFormProps) => {
                     frequency === freq && styles.frequencyButtonTextActive,
                   ]}
                 >
-                  {freq === 'weekly' ? 'Semanal' : 'Mensual'}
+                  {getFrequencyLabel(freq)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -155,7 +172,7 @@ const IncomeForm = ({ onSuccess }: IncomeFormProps) => {
           style={styles.dateButton}
           onPress={() => setShowDatePicker(true)}
         >
-          <Text style={styles.dateButtonText}>📅 {formatDate(selectedDate)}</Text>
+          <Text style={styles.dateButtonText}>📅 {formatDateLocal(selectedDate)}</Text>
         </TouchableOpacity>
 
         <Modal
@@ -220,7 +237,7 @@ const IncomeForm = ({ onSuccess }: IncomeFormProps) => {
                 <View style={styles.incomeInfo}>
                   <Text style={styles.incomeDescription}>{item.description}</Text>
                   <Text style={styles.incomeDate}>
-                    {formatDate(item.date)} • {item.frequency === 'weekly' ? 'Semanal' : 'Mensual'}
+                    {formatDateLocal(item.date)} • {getFrequencyLabel(item.frequency)}
                   </Text>
                 </View>
                 <View style={styles.incomeRight}>
