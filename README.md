@@ -14,24 +14,28 @@ Una aplicación móvil completa para gestionar tus finanzas personales con React
 - **Análisis de Gastos**: Porcentaje de gasto respecto a ingresos con recomendaciones inteligentes
 - **Consejos Financieros**: Tips útiles para mejorar tu situación financiera
 - **Refresco Manual**: Actualiza los datos con un gesto
+- **Estados de Carga**: Indicadores visuales durante la carga de datos
 
 ### 💰 Gestión de Ingresos
-- **Registro de Ingresos**: Registra ingresos semanales o mensuales
+- **Registro de Ingresos**: Registra ingresos semanales o mensuales con validación
 - **Calendario Interactivo**: Selecciona la fecha de ingreso desde un calendario personalizado
 - **Historial**: Visualiza todos tus ingresos registrados
 - **Edición y Eliminación**: Modifica o elimina registros
+- **Validación Robusta**: Validación de montos y campos requeridos
 
 ### 💸 Seguimiento de Gastos Diarios
 - **Categorización**: Clasifica gastos en 7 categorías (Alimentación, Transporte, Entretenimiento, etc.)
 - **Selección de Fecha**: Elige fácilmente la fecha del gasto
 - **Emojis Visuales**: Iconos para cada categoría de gasto
 - **Historial Reciente**: Visualiza tus últimos 10 gastos con totales
+- **Validación de Datos**: Validación de montos positivos y campos obligatorios
 
 ### 🔔 Recordatorios y Alertas
 - **Recordatorios Personalizados**: Para renovaciones, membresías y pagos cotidianos
 - **Frecuencia Flexible**: Configura como únicos, mensuales o anuales
 - **Prioridades**: Asigna niveles de prioridad a cada recordatorio
 - **Estado Activo/Inactivo**: Controla qué recordatorios están vigentes
+- **Validación Completa**: Validación de fechas y montos
 
 ### 🎯 Planes de Ahorro
 - **Metas Financieras**: Crea planes con objetivos y fechas límite
@@ -39,6 +43,7 @@ Una aplicación móvil completa para gestionar tus finanzas personales con React
 - **Prioridades**: Bajo, Medio, Alto
 - **Agregar Ahorros**: Incrementa el ahorro de forma rápida o edítalo directamente
 - **Planes Completados**: Visualiza tus logros
+- **Validación de Montos**: Asegura que los montos sean válidos y dentro de límites
 
 ## 🛠️ Tecnologías Utilizadas
 
@@ -112,16 +117,27 @@ Todos los datos se guardan localmente usando **AsyncStorage**, esto significa:
 - Cálculo automático de balance
 - Porcentaje de gastos vs ingresos
 - Recomendaciones contextuales
+- Estados de carga para mejor UX
 
 ### Gestión Flexible
 - Editar cualquier registro
 - Historial completo
-- Búsqueda y filtrado
+- Validación robusta de datos
+- Mensajes de error descriptivos
 
 ### Datos Visuales
 - Barras de progreso
 - Estadísticas por categoría
 - Resumen mensual
+- Indicadores visuales de estado
+
+### Calidad del Código
+- TypeScript con tipado fuerte (0 errores)
+- Validación de entradas en todos los formularios
+- Generación única de IDs
+- Configuración centralizada
+- Funciones utilitarias compartidas
+- Manejo de errores mejorado
 
 ## 📝 Guía de Uso
 

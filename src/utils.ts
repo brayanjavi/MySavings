@@ -33,6 +33,13 @@ export const formatCurrency = (amount: number, currency: string = 'USD'): string
 };
 
 /**
+ * Formatea un número como cantidad con 2 decimales
+ */
+export const formatAmount = (amount: number): string => {
+  return amount.toFixed(2);
+};
+
+/**
  * Calcula el porcentaje de un valor respecto a un total
  */
 export const calculatePercentage = (value: number, total: number): number => {
