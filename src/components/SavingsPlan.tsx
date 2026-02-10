@@ -305,7 +305,7 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
                             { text: 'Cancelar', style: 'cancel' },
                             {
                               text: 'Agregar',
-                              onPress: (amount) => {
+                              onPress: (amount?: string) => {
                                 if (amount) {
                                   handleUpdateAmount(
                                     item,
@@ -331,7 +331,7 @@ const SavingsPlanComponent = ({ onSuccess }: SavingsPlanProps) => {
                             { text: 'Cancelar', style: 'cancel' },
                             {
                               text: 'Establecer',
-                              onPress: (amount) => {
+                              onPress: (amount?: string) => {
                                 if (amount) {
                                   handleUpdateAmount(item, parseFloat(amount));
                                 }

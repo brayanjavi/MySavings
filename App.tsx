@@ -42,7 +42,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+      <StatusBar style="dark" backgroundColor="#FFF" />
       <View style={styles.content}>{renderContent()}</View>
       
       <View style={styles.tabBar}>
